@@ -1,10 +1,12 @@
 import datetime
+import pytest
 
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
-
-from .models import Question
+from django.db.utils import DataError, IntegrityError
+from django.db import models
+from .models import Question, Choice
 
 
 def create_question(question_text, days):
@@ -15,7 +17,7 @@ def create_question(question_text, days):
     :return: Question object
     """
     time = timezone.now() + datetime.timedelta(days=days)
-    return Question.objects.create(question_text=question_text, pub_date = time)
+    return Question.objects.create(question_text=question_text, pub_date=time)
 
 
 # Create your tests here.
@@ -100,6 +102,10 @@ class TestQuestion(TestCase):
         question = Question(question_text=question_text, pub_date=pub_date)
         self.assertIsInstance(question, Question)
 
+    def test_question_has_pub_date_attribute_of_type_datetime(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        self.assertIsInstance(question.pub_date, datetime.datetime)
+
     #  The __str__ method should return the question_text attribute of the Question object
     def test_str_method_returns_question_text(self):
         question_text = "What is your favorite color?"
@@ -114,11 +120,35 @@ class TestQuestion(TestCase):
         question = Question(pub_date=pub_date)
         self.assertTrue(question.was_published_recently())
 
-    #  Creating a new question with an empty question_text attribute should raise a ValueError
-    def test_create_question_with_empty_question_text_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            pub_date = timezone.now()
-            question = Question(question_text="", pub_date=pub_date)
+    def test_exactly_one_day_ago(self):
+        pub_date = timezone.now() - datetime.timedelta(days=1)
+        question = Question(pub_date=pub_date)
+        self.assertFalse(question.was_published_recently())
+
+    def test_exactly_now(self):
+        pub_date = timezone.now()
+        question = Question(pub_date=pub_date)
+        self.assertTrue(question.was_published_recently())
+
+    def test_returns_false_if_question_published_in_future(self):
+        future_date = timezone.now() + datetime.timedelta(days=1)
+        question = Question(pub_date=future_date)
+        assert question.was_published_recently() == False
+
+    def test_was_published_recently_within_specified_number_of_days(self):
+        pub_date = timezone.now() - datetime.timedelta(days=2)
+        question = Question(pub_date=pub_date)
+        self.assertTrue(question.was_published_recently(days=3))
+
+    def test_returns_false_if_published_exactly_specified_days_ago(self):
+        pub_date = timezone.now() - datetime.timedelta(days=1)
+        question = Question(pub_date=pub_date)
+        self.assertFalse(question.was_published_recently(days=1))
+
+    def test_returns_false_if_question_published_more_than_specified_days_ago(self):
+        pub_date = timezone.now() - datetime.timedelta(days=2)
+        question = Question(pub_date=pub_date)
+        self.assertFalse(question.was_published_recently(days=1))
 
     #  Creating a new question with a pub_date in the future should still create a Question object
     def test_create_question_with_future_pub_date(self):
@@ -133,3 +163,56 @@ class TestQuestion(TestCase):
         pub_date = timezone.now() - datetime.timedelta(days=2)
         question = Question(pub_date=pub_date)
         self.assertFalse(question.was_published_recently())
+
+    def test_create_choice_with_long_choice_text_raises_validation_error(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        long_choice_text = "a" * 201
+        with self.assertRaises(DataError):
+            Choice.objects.create(question=question, choice_text=long_choice_text, votes=0)
+
+    def test_create_question_with_empty_question_text_raises_validation_error(self):
+        with self.assertRaises(IntegrityError):
+            Question.objects.create(question_text="", pub_date=timezone.now())
+
+
+class TestChoice(TestCase):
+
+    #  Creating a Choice object with valid parameters should successfully create a new Choice instance.
+    def test_create_choice_with_valid_parameters(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        choice = Choice.objects.create(question=question, choice_text="Test Choice", votes=0)
+        assert isinstance(choice, Choice)
+
+    #  Calling str() on a Choice object should return the choice_text attribute.
+    def test_str_method_returns_choice_text_attribute(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        choice = Choice.objects.create(question=question, choice_text="Test Choice", votes=0)
+        assert str(choice) == "Test Choice"
+
+    #  Calling votes() on a Choice object should return the votes attribute.
+    def test_votes_method_returns_votes_attribute(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        choice = Choice.objects.create(question=question, choice_text="Test Choice", votes=5)
+        assert choice.votes == 5
+
+    #  Creating a Choice object with a choice_text parameter that exceeds 200 characters should raise a ValidationError.
+    def test_create_choice_with_long_choice_text_raises_validation_error(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        long_choice_text = "a" * 201
+        with pytest.raises(DataError):
+            Choice.objects.create(question=question, choice_text=long_choice_text, votes=0)
+
+    def test_create_choice_with_valid_parameters(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        choice = Choice.objects.create(question=question, choice_text="Test Choice", votes=0)
+        assert isinstance(choice, Choice)
+
+    def test_create_choice_with_negative_votes_raises_check_constraint_error(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        with pytest.raises(IntegrityError):
+            Choice.objects.create(question=question, choice_text="Test Choice", votes=-1)
+
+    def test_create_choice_with_empty_choice_text_raises_check_constraint_error(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        with pytest.raises(IntegrityError):
+            Choice.objects.create(question=question, choice_text="", votes=0)
