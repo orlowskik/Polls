@@ -21,9 +21,13 @@ class DetailView(generic.DetailView):
     def get_queryset(self):
         return Question.objects.filter(pub_date__lte=timezone.now())
 
+
 class ResultsView(generic.DetailView):
     template_name = "polls/results.html"
     model = Question
+
+    def get_queryset(self):
+        return Question.objects.filter(pub_date__lte=timezone.now())
 
 #
 # def index(request):
@@ -51,7 +55,8 @@ def vote(request, question_id):
     try:
         selected = question.choice_set.get(pk=request.POST['choice'])
     except (KeyError, Choice.DoesNotExist):
-        return render(request, "polls/detail.html", {"question": question, "error_message": "You didn't select a choice"}, )
+        return render(request, "polls/detail.html",
+                      {"question": question, "error_message": "You didn't select a choice"}, )
     else:
         selected.votes += 1
         selected.save()

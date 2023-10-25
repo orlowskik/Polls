@@ -15,12 +15,18 @@
             {% if error_message %}
                 <p><strong>{{ error_message }}</strong></p>
             {% endif %}
-            {% for choice in question.choice_set.all %}
-                <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
-                <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
-            {% endfor %}
+            {% if question.choice_set.all %}
+                {% for choice in question.choice_set.all %}
+                    <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
+                    <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
+                {% endfor %}
+            {% else %}
+                    <h5>No choices available</h5>
+            {% endif %}
         </fieldset>
+        <br>
         <input type="submit" value="Vote">
+        <a href ="{% url 'polls:index'%}"><button type="button">Back to polls</button></a>
     </form>
 </body>
 </html>

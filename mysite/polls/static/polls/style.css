@@ -1,5 +1,11 @@
 li a {
     color: green;
+    font-size: 20px;
+}
+
+li {
+    color: white;
+    font-size: 20px;
 }
 
 body {
@@ -10,6 +16,14 @@ legend h1{
     color: Purple;
 }
 
+p strong{
+    color: red
+}
+
 label {
     color: white;
+}
+
+h5 {
+    color: red;
 }
