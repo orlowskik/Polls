@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create new question</title>
+    {% load static %}
+
+    <link rel="stylesheet" href="{% static 'polls/style.css' %}">
+</head>
+<body>
+    <form action="{% url 'polls:question_form' %}" method="post">
+    {% csrf_token %}
+        <fieldset>
+            <legend><h1>Creation form</h1></legend>
+            <label for="text">Question:</label><br>
+            <input type="text" name="question_text" id="text"><br><br>
+
+            <input type="datetime-local" name="pub_date" id="pub_date">
+            <label for="pub_date">Publication date</label><br><br>
+            <input type="datetime-local" name="exp_date" id="exp_date">
+            <label for="exp_date">Expiration date</label><br>
+        </fieldset><br><br>
+        <input type="submit" value="Create question">
+        <a href ="{% url 'polls:index'%}"><button type="button">Back to polls</button></a>
+    </form>
+    <script src="{% static 'polls/form.js' %}"></script>
+</body>
+</html>

@@ -17,7 +17,8 @@ def create_question(question_text, days):
     :return: Question object
     """
     time = timezone.now() + datetime.timedelta(days=days)
-    return Question.objects.create(question_text=question_text, pub_date=time)
+    exp = time + datetime.timedelta(days=7)
+    return Question.objects.create(question_text=question_text, pub_date=time, exp_date=exp)
 
 
 # Create your tests here.
@@ -27,8 +28,8 @@ class QuestionModelTests(TestCase):
         was_published_recently() returns False if question.pub_date is in the future
         :return: True if future date is not recent, else False
         """
-        time = timezone.now() + datetime.timedelta(days=30)
-        future_question = Question(pub_date=time)
+
+        future_question = create_question("Test", 30)
 
         self.assertIs(future_question.was_published_recently(), False, msg="Future date test failed")
 
@@ -38,7 +39,8 @@ class QuestionModelTests(TestCase):
         :return: True if question within day past is recent, else False
         """
         time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
-        recent_question = Question(pub_date=time)
+        exp = time + datetime.timedelta(7)
+        recent_question = Question(question_text="Test", pub_date=time, exp_date=exp)
 
         self.assertIs(recent_question.was_published_recently(), True)
 
@@ -274,7 +276,7 @@ class TestChoice(TestCase):
         with pytest.raises(DataError):
             Choice.objects.create(question=question, choice_text=long_choice_text, votes=0)
 
-    def test_create_choice_with_valid_parameters(self):
+    def test_create_choice_with_valid_parameter(self):
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         choice = Choice.objects.create(question=question, choice_text="Test Choice", votes=0)
         assert isinstance(choice, Choice)

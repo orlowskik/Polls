@@ -7,20 +7,21 @@ from django.core import validators
 
 models.CharField.register_lookup(Length)
 
-
 # The Question class is a Django model that represents a question
 # with a text and a publication date.
 class Question(models.Model):
 
     question_text = models.CharField(max_length=200, unique=True)
-    pub_date = models.DateTimeField('date published')
+    pub_date = models.DateTimeField('date published', default=timezone.now())
+    exp_date = models.DateTimeField('expiration date', default=timezone.now()+timezone.timedelta(7))
 
     def __str__(self):
         return self.question_text
 
     class Meta:
         constraints = [
-            models.CheckConstraint(check=models.Q(question_text__length__gte=1), name="question_text_length")
+            models.CheckConstraint(check=models.Q(question_text__length__gte=1), name="question_text_length"),
+            models.CheckConstraint(check=models.Q(exp_date__gte=models.F("pub_date")), name="Expiration date")
         ]
 
     def was_published_recently(self, days=1):

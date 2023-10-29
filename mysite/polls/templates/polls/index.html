@@ -8,14 +8,22 @@
     <link rel="stylesheet" href="{% static 'polls/style.css' %}">
 </head>
 <body>
+    <div class="centerer">
+        <a href="{% url 'polls:question_form' %}">
+            <button type="button" id="create">CREATE NEW QUESTION</button>
+        </a>
+    </div>
+
     <fieldset>
         <legend><h1>Polls</h1></legend>
+
         {% if latest_questions %}
-            <ul>
                 {% for question in latest_questions %}
-                    <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a> </li>
+                    <a href="{% url 'polls:detail' question.id %}">
+                        <button type="button" class="questions">{{ question.question_text }}</button>
+                    </a>
+                    <br><br>
                 {% endfor %}
-            </ul>
         {% else %}
             <p>No polls are available</p>
         {% endif %}

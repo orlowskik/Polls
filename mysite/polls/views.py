@@ -29,6 +29,14 @@ class ResultsView(generic.DetailView):
     def get_queryset(self):
         return Question.objects.filter(pub_date__lte=timezone.now())
 
+
+class CreateView(generic.CreateView):
+    template_name = "polls/question_form.html"
+    model = Question
+    fields = ['question_text', 'pub_date', 'exp_date']
+
+
+
 #
 # def index(request):
 #     latest_questions = Question.objects.order_by("-pub_date")[:5]
