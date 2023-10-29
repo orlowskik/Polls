@@ -3,20 +3,24 @@ import datetime
 from django.db import models
 from django.db.models.functions import Length
 from django.utils import timezone
+from django.urls import reverse
 from django.core import validators
 
 models.CharField.register_lookup(Length)
 
+
 # The Question class is a Django model that represents a question
 # with a text and a publication date.
 class Question(models.Model):
-
     question_text = models.CharField(max_length=200, unique=True)
     pub_date = models.DateTimeField('date published', default=timezone.now())
-    exp_date = models.DateTimeField('expiration date', default=timezone.now()+timezone.timedelta(7))
+    exp_date = models.DateTimeField('expiration date', default=timezone.now() + timezone.timedelta(7))
 
     def __str__(self):
         return self.question_text
+
+    def get_absolute_url(self):
+        return reverse('polls:detail', args=[self.id])
 
     class Meta:
         constraints = [
@@ -30,17 +34,17 @@ class Question(models.Model):
         """
         if self.pub_date is None:
             return False
-    
+
         if not isinstance(days, int) or days <= 0:
             raise ValueError("Days must be a positive integer")
-    
+
         now = timezone.now()
         if isinstance(days, float):
             days = int(days)
-    
+
         if days < 0:
             return False
-    
+
         return now - datetime.timedelta(days=days) < self.pub_date <= now
 
 

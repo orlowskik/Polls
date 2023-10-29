@@ -44,6 +44,6 @@ let exp = Year + "-" + month + "-" + day + "T" + hour + ":" + min;
 
 
 
-document.getElementById('pub_date').value = now;
-document.getElementById('exp_date').value = exp;
-document.getElementById("text").value = "Insert your question here...";
+document.getElementById('id_pub_date').value = now;
+document.getElementById('id_exp_date').value = exp;
+document.getElementById("id_question_text").placeholder = "Insert your question here...";

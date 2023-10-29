@@ -3,7 +3,9 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views import generic
 from django.utils import timezone
+from django.contrib.admin.widgets import AdminDateWidget
 from .models import Question, Choice
+
 
 
 class IndexView(generic.ListView):
@@ -30,10 +32,16 @@ class ResultsView(generic.DetailView):
         return Question.objects.filter(pub_date__lte=timezone.now())
 
 
-class CreateView(generic.CreateView):
+class QuestionCreateView(generic.CreateView):
     template_name = "polls/question_form.html"
     model = Question
     fields = ['question_text', 'pub_date', 'exp_date']
+
+    def get_form(self, form_class=None):
+        form = super(QuestionCreateView, self).get_form(form_class)
+        form.fields['pub_date'].widget = AdminDateWidget(attrs={'type': 'datetime-local'})
+        form.fields['exp_date'].widget = AdminDateWidget(attrs={'type': 'datetime-local'})
+        return form
 
 
 
@@ -69,3 +77,4 @@ def vote(request, question_id):
         selected.votes += 1
         selected.save()
         return HttpResponseRedirect(reverse("polls:results", args=(question_id,)))
+
