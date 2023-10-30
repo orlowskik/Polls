@@ -10,12 +10,23 @@ from django import forms
 
 class ChoiceForm(forms.ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        super(ChoiceForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, 'instance', None)
+        if instance and instance.id:
+            self.fields['question'].required = False
+            self.fields['question'].widget.attrs['disabled'] = 'disabled'
+    def clean_question(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.question
+        else:
+            return self.cleaned_data.get('question', None)
+
     class Meta:
         model = Choice
-        fields = ['question', 'choice_text', 'votes']
-        widgets = {
-            'question': forms.Select(attrs={'hidden': True, 'required': False})
-        }
+        exclude = ('question',)
+        fields = ['choice_text', 'votes']
 
 
 class IndexView(generic.ListView):
@@ -62,19 +73,14 @@ class ChoiceCreateView(generic.CreateView):
     model = Choice
     form_class = ChoiceForm
 
+    def form_valid(self, form):
+        self.object = form.save(False)
+        self.object.question = Question.objects.get(pk=self.kwargs['pk'])
+        self.object.save()
+        return HttpResponseRedirect(self.get_success_url())
+
     def get_success_url(self):
         return reverse('polls:choice_form', kwargs={'pk': self.object.question.id})
-
-    def get_initial(self):
-        initial = super().get_initial()
-        initial["question"] = Question.objects.get(pk=self.kwargs['pk'])
-        return initial
-
-    def get_form(self, form_class=None):
-        form = super(ChoiceCreateView, self).get_form(form_class)
-        form.fields['question'].label = ""
-        return form
-
 
 #
 # def index(request):

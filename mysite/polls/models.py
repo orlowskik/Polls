@@ -46,13 +46,14 @@ class Question(models.Model):
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice_text = models.CharField(max_length=200, unique=True)
+    choice_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 
     class Meta:
         constraints = [
             models.CheckConstraint(check=models.Q(choice_text__length__gte=1), name="choice_text_length"),
-            models.CheckConstraint(check=models.Q(votes__gte=0), name="negative votes number")
+            models.CheckConstraint(check=models.Q(votes__gte=0), name="negative votes number"),
+            models.UniqueConstraint(fields=['question', 'choice_text'], name='Unique answers to question'),
         ]
 
     def __str__(self):
