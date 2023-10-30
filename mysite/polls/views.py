@@ -5,7 +5,7 @@ from django.views import generic
 from django.utils import timezone
 from django.contrib.admin.widgets import AdminDateWidget
 from .models import Question, Choice
-
+import requests
 
 
 class IndexView(generic.ListView):
@@ -43,6 +43,19 @@ class QuestionCreateView(generic.CreateView):
         form.fields['exp_date'].widget = AdminDateWidget(attrs={'type': 'datetime-local'})
         return form
 
+    def get_success_url(self):
+        return reverse('polls:choice_form', kwargs={'pk': self.object.id})
+
+
+class ChoiceCreateView(generic.CreateView):
+    template_name = "polls/choice_form.html"
+    model = Choice
+    fields = ["question", "choice_text", "votes"]
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial["question"] = Question.objects.get(pk=self.kwargs['pk'])
+        return initial
 
 
 #
@@ -77,4 +90,3 @@ def vote(request, question_id):
         selected.votes += 1
         selected.save()
         return HttpResponseRedirect(reverse("polls:results", args=(question_id,)))
-

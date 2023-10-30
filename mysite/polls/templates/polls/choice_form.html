@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create new choice to question {{ question.id }}</title>
+    {%  load static %}
+
+    <link rel="stylesheet" href="{% static 'polls:style.css' %}">
+</head>
+<body>
+    <form action="" method="post">
+        {% csrf_token %}
+        <fieldset>
+            <legend><h1>Choice creation form</h1></legend>
+            {{ form.as_p }}
+        </fieldset><br><br>
+        <input type="submit" value="Create choice">
+        <a href="{% url 'polls:index' %}" ><button type="button" value="Go to question's details"></button></a>
+    </form>
+</body>
+</html>

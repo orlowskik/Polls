@@ -5,7 +5,6 @@ from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 from django.db.utils import DataError, IntegrityError
-from django.db import models
 from .models import Question, Choice
 
 

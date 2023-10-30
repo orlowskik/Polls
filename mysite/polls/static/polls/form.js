@@ -8,10 +8,14 @@ let Year = date.getFullYear();
 
 let str_month = month
 let str_day = day
+let str_hour = hour
+let str_min = min
 if (month < 10 ) str_month = "0" + month;
 if (day < 10) str_day = "0" + day
+if (hour < 10) str_hour = "0" + hour
+if (min < 10) str_min = "0" + min
 
-let now = Year + "-" + str_month + "-" + str_day + "T" + hour + ":" + min;
+let now = Year + "-" + str_month + "-" + str_day + "T" + str_hour + ":" + str_min;
 
 day = day + 7
 
@@ -39,6 +43,8 @@ if (month > 12){
 
 if (month < 10 ) month = "0" + month;
 if (day < 10) day = "0" + day
+if (hour < 10) hour = "0" + hour
+if (min < 10) min = "0" + min
 let exp = Year + "-" + month + "-" + day + "T" + hour + ":" + min;
 
 

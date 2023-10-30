@@ -4,7 +4,6 @@ from django.db import models
 from django.db.models.functions import Length
 from django.utils import timezone
 from django.urls import reverse
-from django.core import validators
 
 models.CharField.register_lookup(Length)
 
@@ -16,17 +15,14 @@ class Question(models.Model):
     pub_date = models.DateTimeField('date published', default=timezone.now())
     exp_date = models.DateTimeField('expiration date', default=timezone.now() + timezone.timedelta(7))
 
-    def __str__(self):
-        return self.question_text
-
-    def get_absolute_url(self):
-        return reverse('polls:detail', args=[self.id])
-
     class Meta:
         constraints = [
             models.CheckConstraint(check=models.Q(question_text__length__gte=1), name="question_text_length"),
             models.CheckConstraint(check=models.Q(exp_date__gte=models.F("pub_date")), name="Expiration date")
         ]
+
+    def __str__(self):
+        return self.question_text
 
     def was_published_recently(self, days=1):
         """
@@ -53,11 +49,14 @@ class Choice(models.Model):
     choice_text = models.CharField(max_length=200, unique=True)
     votes = models.IntegerField(default=0)
 
-    def __str__(self):
-        return self.choice_text
-
     class Meta:
         constraints = [
             models.CheckConstraint(check=models.Q(choice_text__length__gte=1), name="choice_text_length"),
             models.CheckConstraint(check=models.Q(votes__gte=0), name="negative votes number")
         ]
+
+    def __str__(self):
+        return self.choice_text
+
+    def get_absolute_url(self):
+        return reverse('polls:detail', args=[self.question.id])
