@@ -5,8 +5,16 @@ from django.views import generic
 from django.utils import timezone
 from django.contrib.admin.widgets import AdminDateWidget
 from .models import Question, Choice
-import requests
+from django import forms
 
+
+class ChoiceForm(forms.ModelForm):
+    class Meta:
+        model = Choice
+        fields = ['question', 'choice_text', 'votes']
+        widgets = {
+            'question': forms.Select(attrs={'disabled': True})
+        }
 
 class IndexView(generic.ListView):
     template_name = "polls/index.html"
@@ -50,7 +58,10 @@ class QuestionCreateView(generic.CreateView):
 class ChoiceCreateView(generic.CreateView):
     template_name = "polls/choice_form.html"
     model = Choice
-    fields = ["question", "choice_text", "votes"]
+    form_class = ChoiceForm
+
+    def get_success_url(self):
+        return reverse('polls:choice_form', kwargs={'pk': self.object.question.id})
 
     def get_initial(self):
         initial = super().get_initial()

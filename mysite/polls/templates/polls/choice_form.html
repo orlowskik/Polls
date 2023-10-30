@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create new choice to question {{ question.id }}</title>
-    {%  load static %}
+    <title>Create new choice to question </title>
+    {% load static %}
 
-    <link rel="stylesheet" href="{% static 'polls:style.css' %}">
+    <link rel="stylesheet" href="{% static 'polls/style.css' %}">
 </head>
 <body>
     <form action="" method="post">
@@ -14,8 +14,9 @@
             <legend><h1>Choice creation form</h1></legend>
             {{ form.as_p }}
         </fieldset><br><br>
-        <input type="submit" value="Create choice">
-        <a href="{% url 'polls:index' %}" ><button type="button" value="Go to question's details"></button></a>
+        <input type="submit" value="Create choice" id="create">
+        <a href="{% url 'polls:index' %}" ><button type="button" id="create" value="Go to question's details">Go to question's details</button></a>
     </form>
+    <script src="{% static 'polls/choice_form.js' %}"></script>
 </body>
 </html>
