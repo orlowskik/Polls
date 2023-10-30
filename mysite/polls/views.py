@@ -9,12 +9,14 @@ from django import forms
 
 
 class ChoiceForm(forms.ModelForm):
+
     class Meta:
         model = Choice
         fields = ['question', 'choice_text', 'votes']
         widgets = {
-            'question': forms.Select(attrs={'disabled': True})
+            'question': forms.Select(attrs={'hidden': True, 'required': False})
         }
+
 
 class IndexView(generic.ListView):
     template_name = "polls/index.html"
@@ -67,6 +69,11 @@ class ChoiceCreateView(generic.CreateView):
         initial = super().get_initial()
         initial["question"] = Question.objects.get(pk=self.kwargs['pk'])
         return initial
+
+    def get_form(self, form_class=None):
+        form = super(ChoiceCreateView, self).get_form(form_class)
+        form.fields['question'].label = ""
+        return form
 
 
 #
