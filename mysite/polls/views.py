@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404, request
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views import generic
@@ -16,6 +16,7 @@ class ChoiceForm(forms.ModelForm):
         if instance and instance.id:
             self.fields['question'].required = False
             self.fields['question'].widget.attrs['disabled'] = 'disabled'
+
     def clean_question(self):
         instance = getattr(self, 'instance', None)
         if instance:
@@ -34,6 +35,7 @@ class IndexView(generic.ListView):
     context_object_name = "latest_questions"
 
     def get_queryset(self):
+        self.request.session.flush()
         return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")[:5]
 
 
@@ -42,6 +44,7 @@ class DetailView(generic.DetailView):
     model = Question
 
     def get_queryset(self):
+        self.request.session.flush()
         return Question.objects.filter(pub_date__lte=timezone.now())
 
 
@@ -50,6 +53,7 @@ class ResultsView(generic.DetailView):
     model = Question
 
     def get_queryset(self):
+        self.request.session.flush()
         return Question.objects.filter(pub_date__lte=timezone.now())
 
 
@@ -59,6 +63,7 @@ class QuestionCreateView(generic.CreateView):
     fields = ['question_text', 'pub_date', 'exp_date']
 
     def get_form(self, form_class=None):
+        self.request.session.flush()
         form = super(QuestionCreateView, self).get_form(form_class)
         form.fields['pub_date'].widget = AdminDateWidget(attrs={'type': 'datetime-local'})
         form.fields['exp_date'].widget = AdminDateWidget(attrs={'type': 'datetime-local'})
@@ -67,13 +72,25 @@ class QuestionCreateView(generic.CreateView):
     def get_success_url(self):
         return reverse('polls:choice_form', kwargs={'pk': self.object.id})
 
+    def form_valid(self, form):
+        self.object = form.save()
+        self.request.session['question_id_access'] = self.object.id
+        return HttpResponseRedirect(self.get_success_url())
+
 
 class ChoiceCreateView(generic.CreateView):
     template_name = "polls/choice_form.html"
     model = Choice
     form_class = ChoiceForm
 
+    def check_access(self):
+        if 'question_id_access' not in self.request.session:
+            raise Http404
+        elif self.request.session['question_id_access'] != self.kwargs['pk']:
+            raise Http404
+
     def form_valid(self, form):
+        self.check_access()
         self.object = form.save(False)
         self.object.question = Question.objects.get(pk=self.kwargs['pk'])
         self.object.save()
@@ -81,6 +98,7 @@ class ChoiceCreateView(generic.CreateView):
 
     def get_success_url(self):
         return reverse('polls:choice_form', kwargs={'pk': self.object.question.id})
+
 
 #
 # def index(request):
