@@ -4,7 +4,8 @@ from django.db import models
 from django.db.models.functions import Length
 from django.utils import timezone
 from django.urls import reverse
-from .validators import validate_votes
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from .validators import validate_votes, validate_text
 
 models.CharField.register_lookup(Length)
 
@@ -12,7 +13,7 @@ models.CharField.register_lookup(Length)
 # The Question class is a Django model that represents a question
 # with a text and a publication date.
 class Question(models.Model):
-    question_text = models.CharField(max_length=200, unique=True)
+    question_text = models.CharField(max_length=200, unique=True, validators=[validate_text])
     pub_date = models.DateTimeField('date published', default=timezone.now())
     exp_date = models.DateTimeField('expiration date', default=timezone.now() + timezone.timedelta(7))
 
@@ -47,7 +48,7 @@ class Question(models.Model):
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice_text = models.CharField(max_length=200)
+    choice_text = models.CharField(max_length=200, validators=[validate_text])
     votes = models.IntegerField(default=0, validators=[validate_votes])
 
     class Meta:
@@ -59,6 +60,13 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.choice_text
+
+    def clean(self):
+        try:
+            if self.question.choice_set.filter(choice_text=self.choice_text).count():
+                raise ValidationError('Choice already exists')
+        except ObjectDoesNotExist:
+            pass
 
     def get_absolute_url(self):
         return reverse('polls:detail', args=[self.question.id])

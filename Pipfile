@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 django = "*"
 colorama = "*"
-psycopg = {extras = ["binary"], version = "*"}
+psycopg = "*"
 pytest = "*"
 requests = "*"
 

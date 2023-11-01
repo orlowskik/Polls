@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect, Http404, request
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404
 from django import forms
 from django.urls import reverse
@@ -72,11 +72,10 @@ class ChoiceCreateView(generic.CreateView):
     model = Choice
     form_class = ChoiceForm
 
-    def check_access(self):
-        if 'question_id_access' not in self.request.session:
-            raise Http404
-        elif self.request.session['question_id_access'] != self.kwargs['pk']:
-            raise Http404
+    def get_form(self, form_class=None):
+        form = super(ChoiceCreateView, self).get_form(form_class)
+        self.check_access()
+        return form
 
     def form_valid(self, form):
         self.check_access()
@@ -87,6 +86,12 @@ class ChoiceCreateView(generic.CreateView):
 
     def get_success_url(self):
         return reverse('polls:choice_form', kwargs={'pk': self.object.question.id})
+
+    def check_access(self):
+        if 'question_id_access' not in self.request.session:
+            raise Http404
+        elif self.request.session['question_id_access'] != self.kwargs['pk']:
+            raise Http404
 
 
 #
