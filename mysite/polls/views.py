@@ -1,33 +1,22 @@
 from django.http import HttpResponseRedirect, Http404, request
 from django.shortcuts import render, get_object_or_404
+from django import forms
 from django.urls import reverse
 from django.views import generic
 from django.utils import timezone
 from django.contrib.admin.widgets import AdminDateWidget
 from .models import Question, Choice
-from django import forms
 
 
+# The ChoiceForm class is a Django form that is used to create
+# instances of the Choice model. It includes custom logic to
+# handle the form fields and validation based on the current instance.
 class ChoiceForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(ChoiceForm, self).__init__(*args, **kwargs)
-        instance = getattr(self, 'instance', None)
-        if instance and instance.id:
-            self.fields['question'].required = False
-            self.fields['question'].widget.attrs['disabled'] = 'disabled'
-
-    def clean_question(self):
-        instance = getattr(self, 'instance', None)
-        if instance:
-            return instance.question
-        else:
-            return self.cleaned_data.get('question', None)
-
     class Meta:
         model = Choice
         exclude = ('question',)
         fields = ['choice_text', 'votes']
+        initial = {'votes': 0}
 
 
 class IndexView(generic.ListView):

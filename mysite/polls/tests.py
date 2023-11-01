@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.db.utils import DataError, IntegrityError
 from .models import Question, Choice
+from .views import ChoiceForm
 
 
 def create_question(question_text, days):
@@ -43,127 +44,6 @@ class QuestionModelTests(TestCase):
 
         self.assertIs(recent_question.was_published_recently(), True)
 
-
-class QuestionIndexViewTests(TestCase):
-    def test_no_question(self):
-        """
-        :return: True if no questions msg is displayed, else False
-        """
-        response = self.client.get(reverse("polls:index"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No polls are available")
-        self.assertQuerySetEqual(response.context["latest_questions"], [])
-
-    def test_past_questions(self):
-        """
-        :return: True if past published questions are displayed, else False
-        """
-
-        question = create_question("test", days=-30)
-        response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(response.context["latest_questions"], [question])
-
-    def test_future_questions(self):
-        """
-        :return: True if future published questions are not displayed, else False
-        """
-        create_question("test", days=30)
-        response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(response.context["latest_questions"], [])
-        self.assertContains(response, "No polls are available")
-
-    def test_future_and_past_questions(self):
-        """
-        :return: True if both future published questions are not displayed and past ones are , else False
-        """
-        question = create_question("test1", days=-30)
-        create_question("test2", days=30)
-        response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(response.context["latest_questions"], [question])
-
-    def test_multiple_past_questions(self):
-        """
-        :return: True if multiple questions are displayed from most recent ones, else False
-        """
-        question1 = create_question("test1", -30)
-        question2 = create_question("test2", -10)
-        response = self.client.get(reverse("polls:index"))
-
-        self.assertQuerySetEqual(response.context["latest_questions"], [question2, question1])
-
-
-class DetailViewTest(TestCase):
-    # Context of DetailView is equal to the Question object which corresponds to it
-    def test_past_question_context(self):
-        question = create_question("test1", days=-30)
-        response = self.client.get(reverse("polls:detail", args=(question.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["object"], question)
-
-    # Future question is not visualized and raises error 404
-    def test_future_question_status_code(self):
-        question = create_question(question_text="Test", days=5)
-        response = self.client.get(reverse("polls:detail", args=(question.id,)))
-        self.assertEqual(response.status_code, 404)
-
-    # Invalid question raises error 404
-    def test_no_question_status_code(self):
-        response = self.client.get(reverse("polls:detail", args=(1,)))
-        self.assertEqual(response.status_code, 404)
-
-    # View displays all valid information
-    def test_displays_all_information(self):
-        question = create_question("test", -5)
-        choice1 = Choice.objects.create(question=question, choice_text="Test1", votes=0)
-        choice2 = Choice.objects.create(question=question, choice_text="Test2", votes=5)
-        response = self.client.get(reverse("polls:detail", args=(question.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, question.question_text)
-        self.assertContains(response, choice1.choice_text)
-        self.assertContains(response, choice2.choice_text)
-
-
-class TestResultsView(TestCase):
-    #  Renders the 'polls/results.html' template with the context containing the question object.
-    def test_renders_template_with_question_object(self):
-        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
-        response = self.client.get(reverse('polls:results', args=(question.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'polls/results.html')
-        self.assertEqual(response.context['question'], question)
-
-    #  Returns an HTTP 404 response if the question with the given ID does not exist.
-    def test_returns_404_if_question_does_not_exist(self):
-        response = self.client.get(reverse('polls:results', args=(1,)))
-        self.assertEqual(response.status_code, 404)
-
-    #  Returns an HTTP 404 response if the question has a pub_date in the future.
-    def test_returns_404_if_question_has_future_pub_date(self):
-        question = Question.objects.create(question_text="Test Question",
-                                           pub_date=timezone.now() + datetime.timedelta(days=1))
-        response = self.client.get(reverse('polls:results', args=(question.id,)))
-        self.assertEqual(response.status_code, 404)
-
-    # Returns view with suitable message if the question has no choices.
-    def test_message_if_question_has_no_choices(self):
-        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
-        response = self.client.get(reverse('polls:results', args=(question.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No choices available")
-
-    def test_display_question_choices_and_votes(self):
-        # Create a question
-        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
-        choice1 = question.choice_set.create(question=question, choice_text="Choice 1", votes=5)
-        choice2 = question.choice_set.create(question=question, choice_text="Choice 2", votes=1)
-        response = self.client.get(reverse('polls:results', args=(question.id, )))
-        text1 = f"{choice1.choice_text} -- {choice1.votes} votes"
-        text2 = f"{choice2.choice_text} -- {choice2.votes} vote"
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, question.question_text)
-        self.assertContains(response, text1)
-        self.assertContains(response, text2)
 
 # Generated by CodiumAI
 class TestQuestion(TestCase):
@@ -289,3 +169,216 @@ class TestChoice(TestCase):
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         with pytest.raises(IntegrityError):
             Choice.objects.create(question=question, choice_text="", votes=0)
+
+
+class QuestionIndexViewTests(TestCase):
+    def test_no_question(self):
+        """
+        :return: True if no questions msg is displayed, else False
+        """
+        response = self.client.get(reverse("polls:index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No polls are available")
+        self.assertQuerySetEqual(response.context["latest_questions"], [])
+
+    def test_past_questions(self):
+        """
+        :return: True if past published questions are displayed, else False
+        """
+
+        question = create_question("test", days=-30)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerySetEqual(response.context["latest_questions"], [question])
+
+    def test_future_questions(self):
+        """
+        :return: True if future published questions are not displayed, else False
+        """
+        create_question("test", days=30)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerySetEqual(response.context["latest_questions"], [])
+        self.assertContains(response, "No polls are available")
+
+    def test_future_and_past_questions(self):
+        """
+        :return: True if both future published questions are not displayed and past ones are , else False
+        """
+        question = create_question("test1", days=-30)
+        create_question("test2", days=30)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerySetEqual(response.context["latest_questions"], [question])
+
+    def test_multiple_past_questions(self):
+        """
+        :return: True if multiple questions are displayed from most recent ones, else False
+        """
+        question1 = create_question("test1", -30)
+        question2 = create_question("test2", -10)
+        response = self.client.get(reverse("polls:index"))
+
+        self.assertQuerySetEqual(response.context["latest_questions"], [question2, question1])
+
+
+class DetailViewTest(TestCase):
+    # Context of DetailView is equal to the Question object which corresponds to it
+    def test_past_question_context(self):
+        question = create_question("test1", days=-30)
+        response = self.client.get(reverse("polls:detail", args=(question.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["object"], question)
+
+    # Future question is not visualized and raises error 404
+    def test_future_question_status_code(self):
+        question = create_question(question_text="Test", days=5)
+        response = self.client.get(reverse("polls:detail", args=(question.id,)))
+        self.assertEqual(response.status_code, 404)
+
+    # Invalid question raises error 404
+    def test_no_question_status_code(self):
+        response = self.client.get(reverse("polls:detail", args=(1,)))
+        self.assertEqual(response.status_code, 404)
+
+    # View displays all valid information
+    def test_displays_all_information(self):
+        question = create_question("test", -5)
+        choice1 = Choice.objects.create(question=question, choice_text="Test1", votes=0)
+        choice2 = Choice.objects.create(question=question, choice_text="Test2", votes=5)
+        response = self.client.get(reverse("polls:detail", args=(question.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, question.question_text)
+        self.assertContains(response, choice1.choice_text)
+        self.assertContains(response, choice2.choice_text)
+
+
+class TestResultsView(TestCase):
+    #  Renders the 'polls/results.html' template with the context containing the question object.
+    def test_renders_template_with_question_object(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'polls/results.html')
+        self.assertEqual(response.context['question'], question)
+
+    #  Returns an HTTP 404 response if the question with the given ID does not exist.
+    def test_returns_404_if_question_does_not_exist(self):
+        response = self.client.get(reverse('polls:results', args=(1,)))
+        self.assertEqual(response.status_code, 404)
+
+    #  Returns an HTTP 404 response if the question has a pub_date in the future.
+    def test_returns_404_if_question_has_future_pub_date(self):
+        question = Question.objects.create(question_text="Test Question",
+                                           pub_date=timezone.now() + datetime.timedelta(days=1))
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+        self.assertEqual(response.status_code, 404)
+
+    # Returns view with suitable message if the question has no choices.
+    def test_message_if_question_has_no_choices(self):
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No choices available")
+
+    def test_display_question_choices_and_votes(self):
+        # Create a question
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
+        choice1 = question.choice_set.create(question=question, choice_text="Choice 1", votes=5)
+        choice2 = question.choice_set.create(question=question, choice_text="Choice 2", votes=1)
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+        text1 = f"{choice1.choice_text} -- {choice1.votes} votes"
+        text2 = f"{choice2.choice_text} -- {choice2.votes} vote"
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, question.question_text)
+        self.assertContains(response, text1)
+        self.assertContains(response, text2)
+
+
+class TestChoiceForm(TestCase):
+    def test_choice_form_valid_input(self):
+        form_data = {
+            'choice_text': 'Valid choice',
+            'votes': 10
+        }
+        form = ChoiceForm(data=form_data)
+        assert form.is_valid()
+
+    def test_choice_form_initial_votes(self):
+        form_data = {
+            'choice_text': 'Valid choice',
+        }
+        form = ChoiceForm(data=form_data)
+        assert not form.is_valid()
+
+    def test_choice_form_empty_choice_text(self):
+        form_data = {
+            'choice_text': '',
+            'votes': 10
+        }
+        form = ChoiceForm(data=form_data)
+        assert not form.is_valid()
+
+    def test_choice_form_negative_votes(self):
+        form_data = {
+            'choice_text': 'Valid choice',
+            'votes': -10
+        }
+        form = ChoiceForm(data=form_data)
+        assert not form.is_valid()
+
+
+
+    def test_choice_form_saves_new_choice_object_with_valid_input(self):
+        # Create a question object
+        question = Question.objects.create(question_text="Test Question")
+
+        # Create a form instance with valid input
+        form_data = {
+            'choice_text': 'Test Choice',
+            'votes': 0
+        }
+        form = ChoiceForm(data=form_data)
+
+        # Set the question field to the created question object
+        form.instance.question = question
+
+        # Check if the form is valid
+        assert form.is_valid() == True
+
+        # Save the form
+        choice = form.save()
+
+        # Check if the choice object is saved with the correct values
+        assert choice.choice_text == 'Test Choice'
+        assert choice.votes == 0
+        assert choice.question == question
+
+    def test_choice_form_does_not_save_with_empty_choice_text(self):
+        form_data = {'choice_text': ''}
+        form = ChoiceForm(data=form_data)
+        assert not form.is_valid()
+        assert 'choice_text' in form.errors
+
+    def test_choice_form_does_not_save_with_negative_votes(self):
+        form_data = {
+            'choice_text': 'Option 1',
+            'votes': -1
+        }
+        form = ChoiceForm(data=form_data)
+        assert not form.is_valid()
+        assert 'votes' in form.errors
+
+    def test_choice_form_not_valid_with_long_choice_text(self):
+        form_data = {
+            'choice_text': 'a' * 201,
+            'votes': 0
+        }
+        form = ChoiceForm(data=form_data)
+        assert not form.is_valid()
+
+    def test_choice_form_valid_choice_text_length(self):
+        form_data = {
+            'choice_text': 'a' * 200,
+            'votes': 0
+        }
+        form = ChoiceForm(data=form_data)
+        assert form.is_valid()

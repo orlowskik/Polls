@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models.functions import Length
 from django.utils import timezone
 from django.urls import reverse
+from .validators import validate_votes
 
 models.CharField.register_lookup(Length)
 
@@ -47,7 +48,7 @@ class Question(models.Model):
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=200)
-    votes = models.IntegerField(default=0)
+    votes = models.IntegerField(default=0, validators=[validate_votes])
 
     class Meta:
         constraints = [
