@@ -26,6 +26,7 @@
         </fieldset>
         <br>
         <input type="submit" value="Vote">
+        <a href ="{% url 'polls:results' question.id %}"><button type="button">Results</button></a>
         <a href ="{% url 'polls:index'%}"><button type="button">Back to polls</button></a>
     </form>
 </body>

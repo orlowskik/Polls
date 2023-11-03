@@ -10,11 +10,11 @@ from .validators import validate_votes, validate_text
 models.CharField.register_lookup(Length)
 
 
-# The Question class is a Django model that represents a question
-# with a text and a publication date.
+# The `Question` class represents a model for a question with text, publication date, and expiration date, and includes
+# methods for checking if the question was published recently.
 class Question(models.Model):
     question_text = models.CharField(max_length=200, unique=True, validators=[validate_text])
-    pub_date = models.DateTimeField('date published', default=timezone.now())
+    pub_date = models.DateTimeField('date published', default=timezone.now)
     exp_date = models.DateTimeField('expiration date', default=timezone.now() + timezone.timedelta(7))
 
     class Meta:
@@ -27,6 +27,12 @@ class Question(models.Model):
         return self.question_text
 
     def was_published_recently(self, days=1):
+        """
+        The function checks if an object was published within a certain number of days.
+
+        :param days: The "days" parameter is an optional parameter that specifies the number of days to consider when
+        determining if an object was published recently. By default, it is set to 1 day, defaults to 1 (optional)
+        """
         """
         Returns True if the question was published within the specified number of days, False otherwise.
         """
@@ -46,6 +52,8 @@ class Question(models.Model):
         return now - datetime.timedelta(days=days) < self.pub_date <= now
 
 
+# The Choice class represents a choice for a question in a poll, with attributes for the choice text, number of votes,
+# and a foreign key to the associated question.
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=200, validators=[validate_text])
@@ -62,6 +70,9 @@ class Choice(models.Model):
         return self.choice_text
 
     def clean(self):
+        """
+        The function checks if a choice already exists in a question and raises a validation error if it does.
+        """
         try:
             if self.question.choice_set.filter(choice_text=self.choice_text).count():
                 raise ValidationError('Choice already exists')
@@ -70,3 +81,21 @@ class Choice(models.Model):
 
     def get_absolute_url(self):
         return reverse('polls:detail', args=[self.question.id])
+
+
+class User(models.Model):
+    username = models.CharField(max_length=20, default='Guest')
+    IPv4 = models.GenericIPAddressField(unique=True)
+
+
+class Vote(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateTimeField(default=timezone.now())
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['question', 'user'], name='Unique user votes'),
+
+        ]

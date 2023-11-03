@@ -11,7 +11,6 @@ from django.db.utils import DataError, IntegrityError
 from django.core.exceptions import ValidationError
 from .models import Question, Choice
 from .views import ChoiceForm
-from psycopg.errors import UniqueViolation
 
 
 def create_question(question_text, days):
@@ -60,6 +59,7 @@ class TestQuestion(TestCase):
         question = Question(question_text=question_text, pub_date=pub_date)
         self.assertIsInstance(question, Question)
 
+    # The function tests if the pub_date attribute of a Question object is of type datetime.
     def test_question_has_pub_date_attribute_of_type_datetime(self):
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         self.assertIsInstance(question.pub_date, datetime.datetime)
@@ -79,31 +79,51 @@ class TestQuestion(TestCase):
         self.assertTrue(question.was_published_recently())
 
     def test_exactly_one_day_ago(self):
+        """
+        The function tests if a question was published exactly one day ago.
+        """
         pub_date = timezone.now() - datetime.timedelta(days=1)
         question = Question(pub_date=pub_date)
+        # The above code is using the `assertFalse` method to check if the `was_published_recently` method of the
+        # `question` object returns `False`.
         self.assertFalse(question.was_published_recently())
 
     def test_exactly_now(self):
+        """
+        The function tests if a question was published recently.
+        """
         pub_date = timezone.now()
         question = Question(pub_date=pub_date)
         self.assertTrue(question.was_published_recently())
 
     def test_returns_false_if_question_published_in_future(self):
+        """
+        The function tests if a question was published in the future and returns False if it was.
+        """
         future_date = timezone.now() + datetime.timedelta(days=1)
         question = Question(pub_date=future_date)
         assert question.was_published_recently() == False
 
     def test_was_published_recently_within_specified_number_of_days(self):
+        """
+        The function tests if a question was published recently within a specified number of days.
+        """
         pub_date = timezone.now() - datetime.timedelta(days=2)
         question = Question(pub_date=pub_date)
         self.assertTrue(question.was_published_recently(days=3))
 
     def test_returns_false_if_published_exactly_specified_days_ago(self):
+        """
+        The function tests if a question was published exactly the specified number of days ago.
+        """
         pub_date = timezone.now() - datetime.timedelta(days=1)
         question = Question(pub_date=pub_date)
         self.assertFalse(question.was_published_recently(days=1))
 
     def test_returns_false_if_question_published_more_than_specified_days_ago(self):
+        """
+        The function tests if a question was published more than a specified number of days ago.
+        """
         pub_date = timezone.now() - datetime.timedelta(days=2)
         question = Question(pub_date=pub_date)
         self.assertFalse(question.was_published_recently(days=1))
@@ -123,12 +143,18 @@ class TestQuestion(TestCase):
         self.assertFalse(question.was_published_recently())
 
     def test_create_choice_with_long_choice_text_raises_validation_error(self):
+        """
+        The function tests whether creating a choice with a long choice text raises a validation error.
+        """
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         long_choice_text = "a" * 201
         with self.assertRaises(DataError):
             Choice.objects.create(question=question, choice_text=long_choice_text, votes=0)
 
     def test_create_question_with_empty_question_text_raises_validation_error(self):
+        """
+        The function tests that creating a question with an empty question text raises a validation error.
+        """
         with self.assertRaises(IntegrityError):
             Question.objects.create(question_text="", pub_date=timezone.now())
 
@@ -162,16 +188,25 @@ class TestChoice(TestCase):
             Choice.objects.create(question=question, choice_text=long_choice_text, votes=0)
 
     def test_create_choice_with_valid_parameter(self):
+        """
+        The function tests the creation of a choice object with valid parameters.
+        """
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         choice = Choice.objects.create(question=question, choice_text="Test Choice", votes=0)
         assert isinstance(choice, Choice)
 
     def test_create_choice_with_negative_votes_raises_check_constraint_error(self):
+        """
+        The function tests that creating a choice with negative votes raises a check constraint error.
+        """
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         with pytest.raises(IntegrityError):
             Choice.objects.create(question=question, choice_text="Test Choice", votes=-1)
 
     def test_create_choice_with_empty_choice_text_raises_check_constraint_error(self):
+        """
+        The function tests that creating a choice with an empty choice text raises a check constraint error.
+        """
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         with pytest.raises(IntegrityError):
             Choice.objects.create(question=question, choice_text="", votes=0)
@@ -288,6 +323,9 @@ class TestResultsView(TestCase):
         self.assertContains(response, "No choices available")
 
     def test_display_question_choices_and_votes(self):
+        """
+        The function tests the display of question choices and their respective votes in a web page.
+        """
         # Create a question
         question = Question.objects.create(question_text="Test Question", pub_date=timezone.now())
         choice1 = question.choice_set.create(question=question, choice_text="Choice 1", votes=5)
@@ -305,6 +343,9 @@ class TestResultsView(TestCase):
 # Generated by CodiumAI
 class TestChoiceForm(TestCase):
     def test_choice_form_valid_input(self):
+        """
+        The function tests if a choice form with valid input data is considered valid.
+        """
         form_data = {
             'choice_text': 'Valid choice',
             'votes': 10
@@ -313,6 +354,9 @@ class TestChoiceForm(TestCase):
         assert form.is_valid()
 
     def test_choice_form_initial_votes(self):
+        """
+        The function tests the initial votes for a choice form.
+        """
         form_data = {
             'choice_text': 'Valid choice',
         }
@@ -320,6 +364,9 @@ class TestChoiceForm(TestCase):
         assert not form.is_valid()
 
     def test_choice_form_empty_choice_text(self):
+        """
+        The function tests if the choice text in a form is empty.
+        """
         form_data = {
             'choice_text': '',
             'votes': 10
@@ -328,6 +375,9 @@ class TestChoiceForm(TestCase):
         assert not form.is_valid()
 
     def test_choice_form_negative_votes(self):
+        """
+        The function tests if a choice form with negative votes is considered valid.
+        """
         form_data = {
             'choice_text': 'Valid choice',
             'votes': -10
@@ -336,6 +386,9 @@ class TestChoiceForm(TestCase):
         assert not form.is_valid()
 
     def test_choice_form_saves_new_choice_object_with_valid_input(self):
+        """
+        The function tests if a new choice object is saved correctly with valid input.
+        """
         # Create a question object
         question = Question.objects.create(question_text="Test Question")
 
@@ -361,12 +414,18 @@ class TestChoiceForm(TestCase):
         assert choice.question == question
 
     def test_choice_form_does_not_save_with_empty_choice_text(self):
+        """
+        The function tests that a choice form does not save when the choice text is empty.
+        """
         form_data = {'choice_text': ''}
         form = ChoiceForm(data=form_data)
         assert not form.is_valid()
         assert 'choice_text' in form.errors
 
     def test_choice_form_does_not_save_with_negative_votes(self):
+        """
+        The function tests that a choice form does not save with negative votes.
+        """
         form_data = {
             'choice_text': 'Option 1',
             'votes': -1
@@ -376,6 +435,9 @@ class TestChoiceForm(TestCase):
         assert 'votes' in form.errors
 
     def test_choice_form_not_valid_with_long_choice_text(self):
+        """
+        The function tests if a choice form is not valid when the choice text is too long.
+        """
         form_data = {
             'choice_text': 'a' * 201,
             'votes': 0
@@ -384,6 +446,9 @@ class TestChoiceForm(TestCase):
         assert not form.is_valid()
 
     def test_choice_form_valid_choice_text_length(self):
+        """
+        The function tests if the choice text length is valid in a choice form.
+        """
         form_data = {
             'choice_text': 'a' * 200,
             'votes': 0
@@ -454,7 +519,7 @@ class TestChoiceCreateView(TestCase):
             'choice_text': 'New Choice',
             'votes': 0
         }
-        response = self.client.post(reverse(viewname='polls:choice_form', args=[question.id,]), data=form_data)
+        response = self.client.post(reverse(viewname='polls:choice_form', args=[question.id, ]), data=form_data)
 
         # Assert
         assert response.status_code == 302
@@ -474,11 +539,11 @@ class TestChoiceCreateView(TestCase):
             'votes': 0
         }
         # Act
-        response = self.client.post(reverse(viewname='polls:choice_form', args=[question.id,]), data=form_data)
+        response = self.client.post(reverse(viewname='polls:choice_form', args=[question.id, ]), data=form_data)
 
         # Assert
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('polls:choice_form', args=[question.id,]))
+        self.assertEqual(response.url, reverse('polls:choice_form', args=[question.id, ]))
 
     #  User cannot access the form to create a new choice if session does not contain question_id_access
     def test_user_cannot_access_form_if_session_does_not_contain_question_id_access(self):
@@ -510,6 +575,10 @@ class TestChoiceCreateView(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_empty_choice_text_field(self):
+        """
+        The function tests that an empty choice_text field in a POST request does not create a choice and returns a 404
+        status code.
+        """
         # Create a question
         question = Question.objects.create(question_text="Test Question")
 
@@ -527,14 +596,19 @@ class TestChoiceCreateView(TestCase):
         assert Choice.objects.filter(question=question).count() == 0
 
     def test_negative_votes(self):
+        """
+        The function tests that creating a choice with negative votes returns a 404 error and does not create any choices.
+        """
         # Create a question
-        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now(), exp_date=timezone.now() + timezone.timedelta(7))
+        question = Question.objects.create(question_text="Test Question", pub_date=timezone.now(),
+                                           exp_date=timezone.now() + timezone.timedelta(7))
 
         # Set the session variable for question access
         self.client.session['question_id_access'] = question.id
 
         # Send a POST request to create a choice with negative votes
-        response = self.client.post(reverse('polls:choice_form', kwargs={'pk': question.id}), {'choice_text': 'Test Choice', 'votes': -1})
+        response = self.client.post(reverse('polls:choice_form', kwargs={'pk': question.id}),
+                                    {'choice_text': 'Test Choice', 'votes': -1})
 
         # Assert that the response is a 404 error
         self.assertEqual(response.status_code, 404)
@@ -543,6 +617,10 @@ class TestChoiceCreateView(TestCase):
         self.assertEqual(Choice.objects.count(), 0)
 
     def test_duplicate_choice_text(self):
+        """
+        The function tests for the creation of a choice with the same choice_text as an existing choice for the same
+        question.
+        """
         question = Question.objects.create(question_text="Test Question")
         # Create a choice with the same choice_text as an existing choice for the same question
         existing_choice = Choice.objects.create(question=question, choice_text="Test Choice")
