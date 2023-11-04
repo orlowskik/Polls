@@ -27,7 +27,7 @@
         </form>
     </fieldset>
     <br>
-    <input type="submit" value="Vote" onclick="return auth()">
+    <button type="button" id="submit" value="Vote" onclick="return auth()">Vote</button>
     <a href ="{% url 'polls:results' question.id %}"><button type="button">Results</button></a>
     <a href ="{% url 'polls:index'%}"><button type="button">Back to polls</button></a>
 </body>

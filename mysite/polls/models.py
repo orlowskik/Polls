@@ -85,7 +85,7 @@ class Choice(models.Model):
 
 class User(models.Model):
     username = models.CharField(max_length=20, default='Guest')
-    IPv4 = models.GenericIPAddressField(unique=True)
+    userid = models.CharField(unique=True, max_length=20)
 
 
 class Vote(models.Model):

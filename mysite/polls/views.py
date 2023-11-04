@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.views import generic
 from django.utils import timezone
 from django.contrib.admin.widgets import AdminDateWidget
-from .models import Question, Choice
+from .models import Question, Choice, User, Vote
 
 
 # The ChoiceForm class is a ModelForm that is used to create and update Choice objects,
@@ -35,6 +35,7 @@ class IndexView(generic.ListView):
         """
         self.request.session.flush()
         return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")[:5]
+
 
 # The DetailView class returns a queryset of Question objects that have a pub_date
 # earlier than or equal to the current
@@ -186,13 +187,28 @@ def vote(request, question_id):
      It is used to retrieve the corresponding Question object from the database
     :return: an HTTP redirect response to the "polls:results" view with the question_id as an argument.
     """
+
     question = get_object_or_404(Question, pk=question_id)
     try:
-        selected = question.choice_set.get(pk=request.POST['choice'])
-    except (KeyError, Choice.DoesNotExist):
+        userid = request.POST['userId']
+    except AttributeError:
         return render(request, "polls/detail.html",
-                      {"question": question, "error_message": "You didn't select a choice"}, )
+                      {"question": question, "error_message": "You've already voted"}, )
     else:
-        selected.votes += 1
-        selected.save()
-        return HttpResponseRedirect(reverse("polls:results", args=(question_id,)))
+        if userid:
+            user, _ = User.objects.get_or_create(userid=userid)
+            try:
+                selected = question.choice_set.get(pk=request.POST['choice'])
+            except (KeyError, Choice.DoesNotExist):
+                return render(request, "polls/detail.html",
+                              {"question": question, "error_message": "You didn't select a choice"}, )
+            else:
+                Vote.objects.create(question=question, choice=selected, user=user)
+                selected.votes += 1
+                selected.save()
+                return HttpResponseRedirect(reverse("polls:results", args=(question_id,)))
+        else:
+            return render(request, "polls/detail.html",
+                          {"question": question, "error_message": "Failed to authorize user. Please disable addBlock "
+                                                                  "and try again"}, )
+
