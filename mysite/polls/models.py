@@ -5,7 +5,7 @@ from django.db.models.functions import Length
 from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from .validators import validate_votes, validate_text
+from .validators import validate_votes, validate_text, validate_userid
 
 models.CharField.register_lookup(Length)
 
@@ -83,11 +83,20 @@ class Choice(models.Model):
         return reverse('polls:detail', args=[self.question.id])
 
 
+# The User class is a model that represents a user with a username and a unique userid.
 class User(models.Model):
-    username = models.CharField(max_length=20, default='Guest')
-    userid = models.CharField(unique=True, max_length=20)
+    username = models.CharField(max_length=20, default='Guest', validators=[validate_text])
+    userid = models.CharField(unique=True, max_length=20, validators=[validate_userid])
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(check=models.Q(username__length__gte=1), name="username_length"),
+            models.CheckConstraint(check=models.Q(userid__length=20), name="userid_length"),
+        ]
 
 
+# The Vote class represents a vote made by a user on a specific question and choice, with a unique constraint on the
+# combination of question and user.
 class Vote(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
@@ -97,5 +106,14 @@ class Vote(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['question', 'user'], name='Unique user votes'),
-
         ]
+
+    def clean(self):
+        if self.date >= timezone.now():
+            raise ValidationError('Future date not permitted')
+        try:
+            if self.choice not in self.question.choice_set.all():
+                raise ValidationError('Choice does not exist for this question')
+        except ObjectDoesNotExist:
+            pass
+

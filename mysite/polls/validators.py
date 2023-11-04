@@ -24,3 +24,15 @@ def validate_text(value):
         raise ValidationError(
             "Text value cannot be empty"
         )
+
+
+def validate_userid(value):
+    """
+    The function `validate_userid` checks if an userid length is invalid and raises a `ValidationError` if it is.
+
+    :param value: The `value` parameter is the userid value that needs to be validated
+    """
+    if len(value) != 20:
+        raise ValidationError(
+            "Userid has improper length."
+        )
