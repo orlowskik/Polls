@@ -11,3 +11,4 @@ by given dates and are accessable only during that period.
 - CodiumAI for automated unittest of the project
 - FingerprintJS for authorization of guests and restriction of voting
 - Mintlify Doc Writer for automated documentation
+- PostgreSQL
