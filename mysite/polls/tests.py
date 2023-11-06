@@ -467,8 +467,10 @@ class TestVote(TestCase):
 
         # Create a vote with a future date
         future_date = timezone.now() + timezone.timedelta(days=7)
-        # with pytest.raises(ValidationError):
-        Vote.objects.create(question=question, choice=choice, user=user, date=future_date)
+
+        instance = Vote.objects.create(question=question, choice=choice, user=user, vote_date=future_date)
+        with pytest.raises(ValidationError):
+            instance.full_clean()
 
     #  Attempting to retrieve a non-existing vote
     def test_retrieve_non_existing_vote(self):
@@ -490,8 +492,7 @@ class TestVote(TestCase):
         question1 = Question.objects.create(question_text="Question 1", pub_date=timezone.now())
         question2 = Question.objects.create(question_text="Question 2", pub_date=timezone.now())
 
-        # Create choices for each question
-        choice1 = Choice.objects.create(question=question1, choice_text="Choice 1", votes=0)
+        # Create choice for question 2
         choice2 = Choice.objects.create(question=question2, choice_text="Choice 2", votes=0)
 
         # Attempt to create a vote with a choice that belongs to a different question

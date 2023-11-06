@@ -5,7 +5,8 @@ from django.db.models.functions import Length
 from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from .validators import validate_votes, validate_text, validate_userid
+from .validators import validate_votes, validate_text, validate_userid, validate_date
+from django.core.validators import MaxValueValidator
 
 models.CharField.register_lookup(Length)
 
@@ -101,16 +102,14 @@ class Vote(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateTimeField(default=timezone.now())
+    vote_date = models.DateTimeField(default=timezone.now, validators=[MaxValueValidator(limit_value=timezone.now)])
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['question', 'user'], name='Unique user votes'),
+            models.UniqueConstraint(fields=['question', 'user'], name='Unique user votes required'),
         ]
 
     def clean(self):
-        if self.date >= timezone.now():
-            raise ValidationError('Future date not permitted')
         try:
             if self.choice not in self.question.choice_set.all():
                 raise ValidationError('Choice does not exist for this question')

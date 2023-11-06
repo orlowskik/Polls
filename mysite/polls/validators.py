@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 def validate_votes(value):
@@ -35,4 +36,17 @@ def validate_userid(value):
     if len(value) != 20:
         raise ValidationError(
             "Userid has improper length."
+        )
+
+
+def validate_date(value):
+    """
+    The function `validate_date` checks if a given date is in the future and raises a validation error if it is.
+
+    :param value: The `value` parameter in the `validate_date` function represents the date that needs to be validated. It
+    is expected to be a datetime object
+    """
+    if value > timezone.now():
+        raise ValidationError(
+            "Date cannot be in the future"
         )
