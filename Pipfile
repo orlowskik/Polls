@@ -9,6 +9,8 @@ colorama = "*"
 psycopg = "*"
 pytest = "*"
 requests = "*"
+python-dotenv = "*"
+whitenoise = "*"
 
 [dev-packages]
 
