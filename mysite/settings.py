@@ -121,7 +121,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = (BASE_DIR.as_posix() + '/staticfile')
 
 STATICFILES_DIRS = (str(BASE_DIR.joinpath('polls/static')),)
 STATIC_URL = '/polls/static/'
