@@ -34,6 +34,7 @@ jobs:
         run: | 
           cd mysite
           python manage.py collectstatic
+          yes
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
