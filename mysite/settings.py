@@ -121,10 +121,10 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'polls/static')
+STATIC_ROOT = os.path.join(BASE_DIR, '../polls/static')
 STATIC_URL = 'polls/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'polls/media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, '../../polls/media/')
 MEDIA_URL = 'polls/media/'
 
 # Default primary key field type
